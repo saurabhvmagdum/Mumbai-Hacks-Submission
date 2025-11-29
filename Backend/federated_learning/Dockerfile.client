@@ -1,0 +1,24 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install system dependencies required by scientific Python packages
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Python requirements
+COPY federated_learning/requirements-client.txt /tmp/requirements-client.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-client.txt
+
+# Copy federated learning and agent code needed by Flower clients
+COPY federated_learning /app/federated_learning
+COPY agents /app/agents
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
+
+# Default command can be overridden per-service (demand or triage clients)
+CMD ["python", "-m", "federated_learning.client.demand_client", "--cid", "1", "--server-address", "fl-demand-server:8087"]
+
+
